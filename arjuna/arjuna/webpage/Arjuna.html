@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arjuna Web Control Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+    <link rel="stylesheet" href="Arjuna.css">
+</head>
+<body>
+
+    <h1><i class="fa-solid fa-robot"></i> Arjuna Web Control Dashboard</h1>
+
+    <div class="dashboard-container">
+        
+        <div class="col-left" style="display:flex; flex-direction:column; height:100%;">
+            <div class="card">
+                <h2>Robot Status</h2>
+                <div class="status-row">
+                    <span><i class="fa-solid fa-battery-half"></i> Battery:</span>
+                    <span id="val-battery">--</span>
+                </div>
+                <div class="status-row">
+                    <span><i class="fa-solid fa-bolt"></i> Voltage:</span>
+                    <span id="val-voltage">--</span>
+                </div>
+                <div class="status-row">
+                    <span><i class="fa-solid fa-plug"></i> Current:</span>
+                    <span id="val-current">--</span>
+                </div>
+            </div>
+
+            <div class="card" style="flex-grow: 1; overflow: hidden;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>System Logs</h2>
+                    <button class="btn-clear" onclick="clearLogs()">Clear</button>
+                </div>
+                <div class="log-container">
+                    <table id="logTable">
+                        <thead>
+                            <tr><th>#</th><th>Time</th><th>Level</th><th>Brief</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-center">
+            <div class="card">
+                <div class="connection-header">
+                    <div><span class="status-indicator status-disconnected" id="ros-status">ROS Disconnected</span></div>
+                </div>
+
+                <div class="comms-grid">
+                    <button class="comm-btn" onclick="toggleBtn(this)"><i class="fab fa-bluetooth"></i> BT</button>
+                    <button class="comm-btn active" onclick="toggleBtn(this)"><i class="fa-solid fa-wifi"></i> WiFi</button>
+                    <button class="comm-btn" onclick="toggleBtn(this)"><i class="fa-solid fa-rss"></i> Hotspot</button>
+                    <button class="comm-btn" onclick="toggleBtn(this)"><i class="fa-regular fa-keyboard"></i> Keybd</button>
+                    <button class="comm-btn" onclick="toggleBtn(this)"><i class="fa-solid fa-satellite-dish"></i> NRF</button>
+                    <button class="comm-btn" onclick="toggleBtn(this)"><i class="fa-solid fa-gamepad"></i> FlySky</button>
+                </div>
+
+                <div class="camera-container">
+                    <div class="camera-feed" id="camera-display">
+                        <p><i class="fa-solid fa-video-slash"></i> No Video Feed</p>
+                    </div>
+                    
+                    <div class="camera-controls">
+                        <label>Select Topic: </label>
+                        <div style="display:flex; gap: 5px; justify-content: center; margin-top:5px;">
+                            <select id="camera-topic-select" onchange="updateCameraTopic()">
+                                <option value="none">-- Connect to Load Topics --</option>
+                            </select>
+                            <button class="btn-refresh" onclick="refreshTopics()" title="Refresh List">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls-area">
+                    <div class="d-pad">
+                        <button class="arrow-btn up" onclick="startMoving('up')"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button class="arrow-btn left" onclick="startMoving('left')"><i class="fa-solid fa-arrow-left"></i></button>
+                        <button class="arrow-btn stop-btn" onclick="stop()"><i class="fa-solid fa-stop"></i></button>
+                        <button class="arrow-btn right" onclick="startMoving('right')"><i class="fa-solid fa-arrow-right"></i></button>
+                        <button class="arrow-btn down" onclick="startMoving('down')"><i class="fa-solid fa-arrow-down"></i></button>
+                    </div>
+
+                    <div class="velocity-controls">
+                        <div class="slider-group">
+                            <label>Linear Velocity (m/s)</label>
+                            <div class="slider-row">
+                                <input type="range" min="0" max="2" step="0.01" value="0.5" id="linear-vel" oninput="syncVal('linear', this.value)">
+                                <input type="number" min="0" max="2" step="0.01" value="0.5" id="linear-box" onchange="syncVal('linear', this.value)">
+                            </div>
+                        </div>
+                        <div class="slider-group">
+                            <label>Angular Velocity (rad/s)</label>
+                            <div class="slider-row">
+                                <input type="range" min="0" max="4" step="0.01" value="1.0" id="angular-vel" oninput="syncVal('angular', this.value)">
+                                <input type="number" min="0" max="4" step="0.01" value="1.0" id="angular-box" onchange="syncVal('angular', this.value)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="estop-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <div class="voice-group" style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <label style="font-size: 0.65rem; color: var(--neon-cyan); font-weight: bold; text-transform: uppercase;"><i class="fa-solid fa-microphone"></i> Voice Cmd</label>
+                            <button id="btn-mic" class="btn-mic" onclick="triggerMic()">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                        </div>
+                        <button class="btn-estop" onclick="emergencyStop()">EMERGENCY STOP</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="col-right">
+            <div class="card" style="height: 100%;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>ROS Topic List</h2>
+                    <button class="btn-refresh" onclick="refreshTopics()" title="Refresh List">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
+                <div class="topic-list" id="topic-container">
+                    <div class="topic-row" style="color:#999; text-align:center;">
+                        <i>Connecting...</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="Arjuna.js"></script>
+</body>
+</html>
