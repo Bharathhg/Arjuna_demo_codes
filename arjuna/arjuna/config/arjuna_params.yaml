@@ -1,5 +1,0 @@
-arjuna:
-  ros__parameters:
-    # TODO: Add package parameters
-    param_name: param_value
-
